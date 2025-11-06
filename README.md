@@ -40,7 +40,7 @@ The workflow is organized into 5 files:
 
 1. Install dependencies using uv (recommended):
 ```bash
-uv pip install -e .
+uv sync
 ```
 
 Or using pip:
