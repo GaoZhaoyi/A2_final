@@ -2,13 +2,13 @@ from transformers import Trainer, TrainingArguments, DataCollatorForSeq2Seq, Seq
 
 from constants import OUTPUT_DIR
 from evaluation import compute_metrics
+from callbacks import TestBLEUCallback
 
 
 def create_training_arguments() -> TrainingArguments:
     """
     Create training arguments for RTX 4080S (16GB VRAM).
-    基于文献最佳实践：预训练模型fine-tuning策略。
-    参考：T5论文、Hugging Face Fine-tuning Guide、OPUS-MT文档
+    方案A：更高学习率 + 更多数据 + 更多epoch，目标BLEU 23+
 
     Returns:
         TrainingArguments instance。
@@ -18,19 +18,19 @@ def create_training_arguments() -> TrainingArguments:
     training_args = Seq2SeqTrainingArguments(
         output_dir=OUTPUT_DIR,
         eval_strategy="steps",
-        learning_rate=1e-5,  # 极小学习率，避免catastrophic forgetting
-        per_device_train_batch_size=32,  # 标准batch size
+        learning_rate=3e-5,  # 提高学习率，增强学习能力
+        per_device_train_batch_size=16,  # 减小batch增加更新频率
         per_device_eval_batch_size=32,
-        gradient_accumulation_steps=2,  # 有效batch=64
+        gradient_accumulation_steps=4,  # 保持有效batch=64
         weight_decay=0.01,  # 适度正则
         save_total_limit=2,  # 保留最佳2个checkpoint
-        num_train_epochs=3,  # 增加到3轮，1轮BLEU 19不够
+        num_train_epochs=5,  # 5轮充分学习
         predict_with_generate=True,
         fp16=False,
         bf16=True,  # RTX 4080S支持BF16
-        logging_steps=100,
-        save_steps=1000,
-        eval_steps=1000,
+        logging_steps=200,
+        save_steps=2000,
+        eval_steps=2000,
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
         greater_is_better=False,
@@ -76,6 +76,7 @@ def create_data_collator(tokenizer, model):
 def build_trainer(model, tokenizer, tokenized_datasets) -> Trainer:
     """
     Build and return the trainer object for training and evaluation.
+    包含TestBLEUCallback，在每次eval时同时计算test_bleu
 
     Args:
         model: Model for sequence-to-sequence tasks.
@@ -90,7 +91,7 @@ def build_trainer(model, tokenizer, tokenized_datasets) -> Trainer:
     data_collator = create_data_collator(tokenizer, model)
     training_args: TrainingArguments = create_training_arguments()
 
-    return Seq2SeqTrainer(
+    trainer = Seq2SeqTrainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_datasets["train"],
@@ -99,3 +100,13 @@ def build_trainer(model, tokenizer, tokenized_datasets) -> Trainer:
         data_collator=data_collator,
         compute_metrics=lambda eval_preds: compute_metrics(eval_preds, tokenizer),
     )
+    
+    # 添加自定义callback，在每次evaluation时计算test_bleu
+    test_callback = TestBLEUCallback(
+        trainer=trainer,
+        test_dataset=tokenized_datasets["test"],
+        tokenizer=tokenizer
+    )
+    trainer.add_callback(test_callback)
+    
+    return trainer

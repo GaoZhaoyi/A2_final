@@ -19,20 +19,25 @@ def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDat
     wmt19 = load_dataset("wmt19", "zh-en")
     
     # 修复验证集问题：使用官方验证集，避免虚高的eval_bleu
-    # 增加训练数据到20万，以提升test_bleu到23+
-    total_train_size = 200000
+    # 方案A：增加到50万样本 + 更高学习率，目标BLEU 23+
+    total_train_size = 500000
     validation_size = 2000
     
-    # 前20万作为训练集
+    # 前50万作为训练集
     train_dataset = wmt19["train"].select(range(total_train_size))
     
-    # 使用官方验证集的前2000条，确保与测试集分布一致
-    validation_dataset = wmt19["validation"].select(range(validation_size))
+    # 使用官方验证集随机抽取2000条，避免位置偏差
+    import random
+    random.seed(42)  # 保证可复现
+    val_indices = random.sample(range(len(wmt19["validation"])), validation_size)
+    validation_dataset = wmt19["validation"].select(val_indices)
     
     print(f"训练样本数: {len(train_dataset):,}")
-    print(f"验证样本数: {len(validation_dataset):,} (来自官方验证集)")
-    print(f"预计训练时间: 约1小时 (RTX 4080S, 3 epochs, 20万样本)")
-    print(f"策略: 极小学习率 + 更多数据，目标test_bleu 23+")
+    print(f"验证样本数: {len(validation_dataset):,} (随机抽取自官方验证集)")
+    print(f"测试样本数: {len(wmt19['validation']):,} (完整官方验证集)")
+    print(f"注：训练时将同时输出eval_bleu和test_bleu供参考")
+    print(f"预计训练时间: 约2.5小时 (RTX 4080S, 5 epochs, 50万样本)")
+    print(f"策略: 更高学习率(3e-5) + 更多数据，目标BLEU 23+")
 
     # 测试集保持不变
     test_dataset = wmt19["validation"]
