@@ -22,13 +22,13 @@ def create_training_arguments() -> TrainingArguments:
         per_device_eval_batch_size=32,
         gradient_accumulation_steps=2,  # 有效batch=64
         weight_decay=0.01,
-        save_total_limit=3,
+        save_total_limit=3,  # 只保留最近3个checkpoint，节省磁盘空间
         num_train_epochs=3,  # 3轮训练以达到BLEU 24-25
         predict_with_generate=True,
         fp16=False,
         bf16=True,  # RTX 4080S支持BF16
         logging_steps=100,
-        save_steps=1000,
+        save_steps=1000,  # 每1000步保存一次checkpoint（约15分钟）
         eval_steps=1000,
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
@@ -40,6 +40,11 @@ def create_training_arguments() -> TrainingArguments:
         label_smoothing_factor=0.1,
         generation_max_length=128,
         generation_num_beams=4,
+        
+        # 断点续训配置
+        save_safetensors=True,  # 使用更安全的safetensors格式
+        save_on_each_node=True,  # 多节点训练时每个节点都保存
+        resume_from_checkpoint=None,  # 由main.py自动检测
         
         # 系统优化
         dataloader_num_workers=4,
