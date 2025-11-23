@@ -31,7 +31,8 @@ def initialize_model() -> PreTrainedModel:
     NOTE: You are free to change this.
     """
     model: PreTrainedModel = AutoModelForSeq2SeqLM.from_pretrained(
-        pretrained_model_name_or_path=MODEL_CHECKPOINT
+        pretrained_model_name_or_path=MODEL_CHECKPOINT,
+        use_safetensors=True  # 强制使用safetensors
     )
     
     # Enable gradient checkpointing for memory efficiency
