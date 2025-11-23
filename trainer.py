@@ -7,44 +7,43 @@ from evaluation import compute_metrics
 def create_training_arguments() -> TrainingArguments:
     """
     Create training arguments for RTX 4080S (16GB VRAM).
-    针对opus-mt-zh-en模型和4小时训练目标优化。
+    针对opus-mt-zh-en模型，在50万样本上使用更强正则和更多epoch。
 
     Returns:
-        TrainingArguments instance.
+        TrainingArguments instance。
 
-    NOTE: You are free to change this.
+    NOTE: You are free to change this。
     """
     training_args = Seq2SeqTrainingArguments(
         output_dir=OUTPUT_DIR,
         eval_strategy="steps",
-        learning_rate=5e-5,  # opus-mt模型使用标准学习率
-        per_device_train_batch_size=32,  # opus-mt更小，可以用更大batch
+        learning_rate=3e-5,  # 降低学习率，减少过拟合
+        per_device_train_batch_size=16,  # 减小batch size增加泛化能力
         per_device_eval_batch_size=32,
-        gradient_accumulation_steps=2,  # 有效batch=64
-        weight_decay=0.01,
-        save_total_limit=3,  # 只保留最近3个checkpoint，节省磁盘空间
-        num_train_epochs=3,  # 3轮训练以达到BLEU 24-25
+        gradient_accumulation_steps=4,  # 保持有效batch=64
+        weight_decay=0.05,  # 增加权重衰减，防止过拟合
+        save_total_limit=3,  # 只保留最近3个checkpoint
+        num_train_epochs=5,  # 使用更多epoch配合更少样本
         predict_with_generate=True,
         fp16=False,
         bf16=True,  # RTX 4080S支持BF16
-        logging_steps=100,
-        save_steps=1000,  # 每1000步保存一次checkpoint（约15分钟）
-        eval_steps=1000,
+        logging_steps=50,
+        save_steps=500,  # 更频繁保存checkpoint
+        eval_steps=500,  # 更频繁评估
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
         greater_is_better=False,
-        warmup_steps=500,
-        lr_scheduler_type="linear",
+        warmup_ratio=0.1,  # 使用warmup_ratio代替固定步数
+        lr_scheduler_type="cosine",  # 使用cosine调度器
         seed=42,
         report_to="none",
-        label_smoothing_factor=0.1,
+        label_smoothing_factor=0.2,  # 增加label smoothing 提升泛化
         generation_max_length=128,
         generation_num_beams=4,
         
-        # 断点续训配置
-        save_safetensors=True,  # 使用更安全的safetensors格式
-        save_on_each_node=True,  # 多节点训练时每个节点都保存
-        resume_from_checkpoint=None,  # 由main.py自动检测
+        # 防止过拟合的配置
+        max_grad_norm=1.0,  # 梯度裁剪
+        gradient_checkpointing=True,  # 节省显存
         
         # 系统优化
         dataloader_num_workers=4,

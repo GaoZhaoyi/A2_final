@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from dataset import build_dataset, preprocess_data
 from model import initialize_model, initialize_tokenizer
@@ -10,6 +9,9 @@ from constants import OUTPUT_DIR
 def get_latest_checkpoint(output_dir):
     """
     获取最新的checkpoint路径，用于断点续训。
+    
+    Args:
+        output_dir: 输出目录路径
     
     Returns:
         str or None: 最新checkpoint的路径，如果不存在则返回None

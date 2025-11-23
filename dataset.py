@@ -18,17 +18,21 @@ def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDat
     # Load WMT19 zh-en dataset
     wmt19 = load_dataset("wmt19", "zh-en")
     
-    # 使用2M训练样本（约2轮可在4小时内完成，BLEU可达24-25）
-    train_size = 2000000
-    train_dataset = wmt19["train"].select(range(min(train_size, len(wmt19["train"]))))
+    # 使用50万训练样本，配合更强正则和更多epoch，减少过拟合
+    total_train_size = 500000
+    validation_size = 2000
+    
+    # 前50万作为训练集
+    train_dataset = wmt19["train"].select(range(total_train_size))
+    
+    # 紧接着的2000条作为验证集，保证与训练集不重叠且分布接近
+    validation_dataset = wmt19["train"].select(
+        range(total_train_size, total_train_size + validation_size)
+    )
     
     print(f"训练样本数: {len(train_dataset):,}")
-    print(f"预计训练时间: 约3-4小时 (RTX 4080S, opus-mt-zh-en模型)")
-    
-    # 使用WMT19训练集末尾2000个样本作为验证集
-    validation_dataset = wmt19["train"].select(
-        range(len(wmt19["train"]) - 2000, len(wmt19["train"]))
-    )
+    print(f"验证样本数: {len(validation_dataset):,}")
+    print(f"预计训练时间: 约2-3小时 (RTX 4080S, 5 epochs, 正则增强)")
 
     # 测试集保持不变
     test_dataset = wmt19["validation"]
