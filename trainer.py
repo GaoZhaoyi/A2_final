@@ -69,7 +69,9 @@ def create_data_collator(tokenizer, model):
         tokenizer=tokenizer, 
         model=model,
         padding=True,
-        pad_to_multiple_of=8  # 针对RTX 4080S张量核心优化
+        pad_to_multiple_of=8,  # 针对RTX 4080S张量核心优化
+        label_pad_token_id=tokenizer.pad_token_id,  # 确保正确处理labels
+        return_tensors="pt"
     )
 
 
