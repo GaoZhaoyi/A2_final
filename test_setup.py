@@ -25,8 +25,7 @@ def test_setup():
     tokenizer = initialize_tokenizer()
     print(f"✓ 分词器已加载: {tokenizer.__class__.__name__}")
     print(f"  - 词汇表大小: {len(tokenizer)}")
-    print(f"  - 源语言: {tokenizer.src_lang}")
-    print(f"  - 目标语言: {tokenizer.tgt_lang}")
+    print(f"  - 模型类型: MarianMT (中文→英文专用)")
     
     # 3. 测试模型初始化
     print("\n3. 初始化模型...")
@@ -71,8 +70,7 @@ def test_setup():
     test_zh = "今天天气很好。"
     test_en = "The weather is very nice today."
     input_ids = tokenizer(test_zh, return_tensors="pt").input_ids
-    with tokenizer.as_target_tokenizer():
-        label_ids = tokenizer(test_en, return_tensors="pt").input_ids
+    label_ids = tokenizer(text_target=test_en, return_tensors="pt").input_ids
     print(f"✓ 分词正常工作")
     print(f"  - 中文输入: {test_zh}")
     print(f"  - 分词后: {input_ids.shape}")
