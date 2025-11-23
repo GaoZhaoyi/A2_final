@@ -17,25 +17,35 @@ def create_training_arguments() -> TrainingArguments:
     """
     training_args = Seq2SeqTrainingArguments(
         output_dir=OUTPUT_DIR,
-        num_train_epochs=1,
-        per_device_train_batch_size=48,
+        num_train_epochs=2,  # 减少到2轮以控制时间（约4小时）
+        per_device_train_batch_size=24,  # RTX 4080S优化：增加批次大小
         per_device_eval_batch_size=48,
-        learning_rate=2e-5,
+        learning_rate=8e-5,  # 更高学习率以加快收敛
         weight_decay=0.01,
-        warmup_steps=0,
+        warmup_ratio=0.06,  # 减少预热比例以加快训练
         logging_steps=100,
-        save_steps=1000,
+        save_steps=3000,  # 减少保存频率节省时间
         eval_strategy="steps",
-        eval_steps=500,
-        save_total_limit=3,
+        eval_steps=2000,  # 减少评估频率节省时间
+        save_total_limit=1,  # 只保存最佳模型
         load_best_model_at_end=True,
         metric_for_best_model="bleu",
         greater_is_better=True,
         max_grad_norm=1.0,
         predict_with_generate=True,
-        fp16=False,
-        gradient_accumulation_steps=4,
-        dataloader_num_workers=4,
+        generation_max_length=256,
+        generation_num_beams=4,  # 保持集束搜索以确保质量
+        bf16=True,  # RTX 4080S使用BF16比FP16更优
+        fp16=False,  # 禁用FP16
+        gradient_accumulation_steps=4,  # 有效批次 = 24 * 4 = 96
+        gradient_checkpointing=True,  # 16GB显存需要梯度检查点
+        dataloader_num_workers=8,  # Linux下可以使用更多worker
+        lr_scheduler_type="cosine",  # 余弦调度
+        optim="adamw_torch_fused",  # RTX 4080S使用融合优化器更快
+        report_to="none",
+        label_smoothing_factor=0.1,
+        ddp_find_unused_parameters=False,  # 加速训练
+        dataloader_pin_memory=True,  # Linux下启用内存固定
     )
 
     return training_args
@@ -44,6 +54,7 @@ def create_training_arguments() -> TrainingArguments:
 def create_data_collator(tokenizer, model):
     """
     Create data collator for sequence-to-sequence tasks.
+    Optimized for RTX 4080S with BF16.
 
     Args:
         tokenizer: Tokenizer object.
@@ -54,7 +65,12 @@ def create_data_collator(tokenizer, model):
 
     NOTE: You are free to change this. But make sure the data collator is the same as the model.
     """
-    return DataCollatorForSeq2Seq(tokenizer=tokenizer, model=model)
+    return DataCollatorForSeq2Seq(
+        tokenizer=tokenizer, 
+        model=model,
+        padding=True,
+        pad_to_multiple_of=8  # 针对RTX 4080S张量核心优化
+    )
 
 
 def build_trainer(model, tokenizer, tokenized_datasets) -> Trainer:

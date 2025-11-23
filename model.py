@@ -1,6 +1,6 @@
 from transformers import AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast, PreTrainedModel, AutoModelForSeq2SeqLM
 
-from constants import MODEL_CHECKPOINT
+from constants import MODEL_CHECKPOINT, SOURCE_LANG, TARGET_LANG
 
 
 def initialize_tokenizer() -> PreTrainedTokenizer | PreTrainedTokenizerFast:
@@ -13,7 +13,9 @@ def initialize_tokenizer() -> PreTrainedTokenizer | PreTrainedTokenizerFast:
     NOTE: You are free to change this. But make sure the tokenizer is the same as the model.
     """
     tokenizer: PreTrainedTokenizer | PreTrainedTokenizerFast = AutoTokenizer.from_pretrained(
-        pretrained_model_name_or_path=MODEL_CHECKPOINT
+        pretrained_model_name_or_path=MODEL_CHECKPOINT,
+        src_lang=SOURCE_LANG,
+        tgt_lang=TARGET_LANG
     )
     return tokenizer
 
@@ -31,4 +33,9 @@ def initialize_model() -> PreTrainedModel:
     model: PreTrainedModel = AutoModelForSeq2SeqLM.from_pretrained(
         pretrained_model_name_or_path=MODEL_CHECKPOINT
     )
+    
+    # Enable gradient checkpointing for memory efficiency
+    if hasattr(model, "gradient_checkpointing_enable"):
+        model.gradient_checkpointing_enable()
+    
     return model
