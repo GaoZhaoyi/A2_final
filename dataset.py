@@ -29,7 +29,7 @@ def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDat
     
     # 添加OPUS-100的高质量子集（约50万样本）
     try:
-        opus100 = load_dataset("opus100", "zh-en", split="train")
+        opus100 = load_dataset("opus100", "en-zh", split="train")
         # 选择前50万高质量样本并过滤
         opus100_subset = opus100.select(range(min(500000, len(opus100))))
         opus100_filtered = opus100_subset.filter(

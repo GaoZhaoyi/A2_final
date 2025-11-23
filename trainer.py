@@ -24,7 +24,7 @@ def create_training_arguments() -> TrainingArguments:
         weight_decay=0.01,
         warmup_ratio=0.06,  # 减少预热比例以加快训练
         logging_steps=100,
-        save_steps=3000,  # 减少保存频率节省时间
+        save_steps=2000,  # 必须是eval_steps的整数倍
         eval_strategy="steps",
         eval_steps=2000,  # 减少评估频率节省时间
         save_total_limit=1,  # 只保存最佳模型
