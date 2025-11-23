@@ -24,7 +24,7 @@ def create_training_arguments() -> TrainingArguments:
         gradient_accumulation_steps=2,  # 有效batch=64
         weight_decay=0.01,  # 适度正则
         save_total_limit=2,  # 保留最佳2个checkpoint
-        num_train_epochs=1,  # 只需要1个epoch！
+        num_train_epochs=3,  # 增加到3轮，1轮BLEU 19不够
         predict_with_generate=True,
         fp16=False,
         bf16=True,  # RTX 4080S支持BF16
