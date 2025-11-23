@@ -32,9 +32,7 @@ def initialize_model() -> PreTrainedModel:
     """
     model: PreTrainedModel = AutoModelForSeq2SeqLM.from_pretrained(
         pretrained_model_name_or_path=MODEL_CHECKPOINT,
-        use_safetensors=True,  # 强制使用safetensors
-        low_cpu_mem_usage=False,  # 禁用低内存模式，防止Meta Device加载问题
-        torch_dtype="auto"
+        low_cpu_mem_usage=False  # 禁用低内存模式，防止Meta Device加载问题
     )
     
     # Enable gradient checkpointing for memory efficiency
