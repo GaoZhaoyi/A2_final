@@ -143,5 +143,6 @@ def preprocess_data(raw_datasets: DatasetDict, tokenizer) -> DatasetDict:
             max_target_length=MAX_TARGET_LENGTH,
         ),
         batched=True,
+        remove_columns=["translation"],  # 只移除translation列，保留所有新创建的列
     )
     return tokenized_datasets

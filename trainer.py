@@ -54,25 +54,70 @@ def create_training_arguments() -> TrainingArguments:
 def create_data_collator(tokenizer, model):
     """
     Create data collator for sequence-to-sequence tasks.
-    Optimized for RTX 4080S with BF16.
-
+    使用自定义collator确保decoder_input_ids被正确传递。
+    
     Args:
         tokenizer: Tokenizer object.
         model: Model object.
 
     Returns:
-        DataCollatorForSeq2Seq instance.
+        Custom data collator function.
 
     NOTE: You are free to change this. But make sure the data collator is the same as the model.
     """
-    return DataCollatorForSeq2Seq(
-        tokenizer=tokenizer, 
-        model=model,
-        padding=True,
-        pad_to_multiple_of=8,  # 针对RTX 4080S张量核心优化
-        label_pad_token_id=tokenizer.pad_token_id,  # 确保正确处理labels
-        return_tensors="pt"
-    )
+    import torch
+    
+    def custom_data_collator(features):
+        """自定义collator，确保decoder_input_ids被正确处理"""
+        # 提取所有字段
+        batch = {}
+        
+        # Padding input_ids
+        input_ids = [f['input_ids'] for f in features]
+        max_input_len = max(len(ids) for ids in input_ids)
+        # 对齐到8的倍数（Tensor Core优化）
+        max_input_len = ((max_input_len + 7) // 8) * 8
+        
+        padded_input_ids = []
+        attention_mask = []
+        for ids in input_ids:
+            padding_len = max_input_len - len(ids)
+            padded_input_ids.append(ids + [tokenizer.pad_token_id] * padding_len)
+            attention_mask.append([1] * len(ids) + [0] * padding_len)
+        
+        batch['input_ids'] = torch.tensor(padded_input_ids, dtype=torch.long)
+        batch['attention_mask'] = torch.tensor(attention_mask, dtype=torch.long)
+        
+        # Padding decoder_input_ids
+        if 'decoder_input_ids' in features[0]:
+            decoder_input_ids = [f['decoder_input_ids'] for f in features]
+            max_decoder_len = max(len(ids) for ids in decoder_input_ids)
+            max_decoder_len = ((max_decoder_len + 7) // 8) * 8
+            
+            padded_decoder_input_ids = []
+            for ids in decoder_input_ids:
+                padding_len = max_decoder_len - len(ids)
+                padded_decoder_input_ids.append(ids + [tokenizer.pad_token_id] * padding_len)
+            
+            batch['decoder_input_ids'] = torch.tensor(padded_decoder_input_ids, dtype=torch.long)
+        
+        # Padding labels
+        if 'labels' in features[0]:
+            labels = [f['labels'] for f in features]
+            max_label_len = max(len(ids) for ids in labels)
+            max_label_len = ((max_label_len + 7) // 8) * 8
+            
+            padded_labels = []
+            for ids in labels:
+                padding_len = max_label_len - len(ids)
+                # labels用-100 padding（CrossEntropyLoss会忽略）
+                padded_labels.append(ids + [-100] * padding_len)
+            
+            batch['labels'] = torch.tensor(padded_labels, dtype=torch.long)
+        
+        return batch
+    
+    return custom_data_collator
 
 
 def build_trainer(model, tokenizer, tokenized_datasets) -> Trainer:
