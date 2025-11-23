@@ -32,6 +32,9 @@ def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDat
         opus100 = load_dataset("opus100", "en-zh", split="train")
         # 选择前50万高质量样本并过滤
         opus100_subset = opus100.select(range(min(500000, len(opus100))))
+        # 强制转换特征以匹配WMT19的 ['zh', 'en'] 顺序
+        opus100_subset = opus100_subset.cast(wmt19["train"].features)
+        
         opus100_filtered = opus100_subset.filter(
             lambda x: 10 <= len(x["translation"]["zh"]) <= 400 and 
                      10 <= len(x["translation"]["en"]) <= 400
