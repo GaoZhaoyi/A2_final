@@ -110,6 +110,16 @@ def preprocess_function(examples, prefix, tokenizer, max_input_length, max_targe
         )
 
     model_inputs["labels"] = labels["input_ids"]
+    
+    # 手动创建 decoder_input_ids（右移labels，添加eos_token作为起始）
+    # 这是为了避免依赖DataCollator的自动生成（可能因gradient checkpointing失效）
+    decoder_input_ids = []
+    for label_ids in labels["input_ids"]:
+        # NLLB使用eos_token作为decoder的起始token
+        shifted = [tokenizer.eos_token_id] + label_ids[:-1]
+        decoder_input_ids.append(shifted)
+    
+    model_inputs["decoder_input_ids"] = decoder_input_ids
     return model_inputs
 
 
