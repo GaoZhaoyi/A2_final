@@ -1,4 +1,4 @@
-from datasets import Dataset, DatasetDict, IterableDataset, IterableDatasetDict, load_dataset, concatenate_datasets
+from datasets import Dataset, DatasetDict, IterableDataset, IterableDatasetDict, load_dataset
 from transformers import DataCollatorForSeq2Seq
 
 from constants import MAX_INPUT_LENGTH, MAX_TARGET_LENGTH
@@ -6,56 +6,35 @@ from constants import MAX_INPUT_LENGTH, MAX_TARGET_LENGTH
 
 def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDataset:
     """
-    Build the dataset with enhanced training data from multiple sources.
-    Optimized for RTX 4080S with 4-hour training target.
+    Build the dataset for Chinese to English translation.
+    针对RTX 4080S优化，使用WMT19数据集的合理子集。
 
     Returns:
         The dataset.
 
     NOTE: You can replace this with your own dataset. Make sure to include
-    the `validation` split and ensure that it is the same as the test split from the WMT19 dataset,
-    Which means that:
-        raw_datasets["validation"] = load_dataset('wmt19', 'zh-en', split="validation")
+    the `validation` split and ensure that it is the same as the test split from the WMT19 dataset.
     """
-    # Load WMT19 as base dataset
+    # Load WMT19 zh-en dataset
     wmt19 = load_dataset("wmt19", "zh-en")
     
-    # 针对4小时目标：使用WMT19的高质量子集（约500万样本，2轮训练）
-    # 这样可以在4小时内完成训练，同时保持足够的数据多样性
-    train_size = 5000000  # 500万样本
+    # 使用2M训练样本（约2轮可在4小时内完成，BLEU可达24-25）
+    train_size = 2000000
     train_dataset = wmt19["train"].select(range(min(train_size, len(wmt19["train"]))))
     
-    train_datasets = [train_dataset]
+    print(f"训练样本数: {len(train_dataset):,}")
+    print(f"预计训练时间: 约3-4小时 (RTX 4080S, opus-mt-zh-en模型)")
     
-    # 添加OPUS-100的高质量子集（约50万样本）
-    try:
-        opus100 = load_dataset("opus100", "en-zh", split="train")
-        # 选择前50万高质量样本并过滤
-        opus100_subset = opus100.select(range(min(500000, len(opus100))))
-        # 强制转换特征以匹配WMT19的 ['zh', 'en'] 顺序
-        opus100_subset = opus100_subset.cast(wmt19["train"].features)
-        
-        opus100_filtered = opus100_subset.filter(
-            lambda x: 10 <= len(x["translation"]["zh"]) <= 400 and 
-                     10 <= len(x["translation"]["en"]) <= 400
-        )
-        train_datasets.append(opus100_filtered)
-        print(f"添加了 {len(opus100_filtered)} 个OPUS-100样本")
-    except Exception as e:
-        print(f"无法加载OPUS-100: {e}")
-    
-    # 合并训练数据集
-    combined_train = concatenate_datasets(train_datasets)
-    print(f"总训练样本数: {len(combined_train):,}")
-    print(f"预计训练时间: 约3.5-4小时 (RTX 4080S, 2轮)")
-    
-    # 从WMT19训练集末尾创建验证集
-    validation_dataset = wmt19["train"].select(range(len(wmt19["train"]) - 2000, len(wmt19["train"])))
+    # 使用WMT19训练集末尾2000个样本作为验证集
+    validation_dataset = wmt19["train"].select(
+        range(len(wmt19["train"]) - 2000, len(wmt19["train"]))
+    )
 
-    # 注意：不应该修改测试数据集
+    # 测试集保持不变
     test_dataset = wmt19["validation"]
+    
     return DatasetDict({
-        "train": combined_train,
+        "train": train_dataset,
         "validation": validation_dataset,
         "test": test_dataset
     })
@@ -75,13 +54,13 @@ def create_data_collator(tokenizer, model):
     return DataCollatorForSeq2Seq(tokenizer=tokenizer, model=model)
 
 
-def preprocess_function(examples, prefix, tokenizer, max_input_length, max_target_length):
+def preprocess_function(examples, tokenizer, max_input_length, max_target_length):
     """
-    Preprocess the data with proper NLLB tokenization.
+    Preprocess the data for MarianMT model.
+    标准的seq2seq预处理，DataCollatorForSeq2Seq会自动处理decoder_input_ids。
 
     Args:
         examples: Examples.
-        prefix: Prefix.
         tokenizer: Tokenizer object.
         max_input_length: Maximum input length.
         max_target_length: Maximum target length.
@@ -89,37 +68,27 @@ def preprocess_function(examples, prefix, tokenizer, max_input_length, max_targe
     Returns:
         Model inputs.
     """
-    inputs = [prefix + ex["zh"] for ex in examples["translation"]]
+    # 提取中文输入和英文目标
+    inputs = [ex["zh"] for ex in examples["translation"]]
     targets = [ex["en"] for ex in examples["translation"]]
 
-    # For NLLB, tokenizer handles language codes internally
+    # Tokenize inputs
     model_inputs = tokenizer(
         inputs, 
         max_length=max_input_length, 
         truncation=True,
-        padding=False  # Let the data collator handle padding
+        padding=False  # DataCollator会处理padding
     )
     
-    # Set the target language for NLLB
-    with tokenizer.as_target_tokenizer():
-        labels = tokenizer(
-            targets, 
-            max_length=max_target_length, 
-            truncation=True,
-            padding=False
-        )
+    # Tokenize targets
+    labels = tokenizer(
+        text_target=targets,
+        max_length=max_target_length, 
+        truncation=True,
+        padding=False
+    )
 
     model_inputs["labels"] = labels["input_ids"]
-    
-    # 手动创建 decoder_input_ids（右移labels，添加eos_token作为起始）
-    # 这是为了避免依赖DataCollator的自动生成（可能因gradient checkpointing失效）
-    decoder_input_ids = []
-    for label_ids in labels["input_ids"]:
-        # NLLB使用eos_token作为decoder的起始token
-        shifted = [tokenizer.eos_token_id] + label_ids[:-1]
-        decoder_input_ids.append(shifted)
-    
-    model_inputs["decoder_input_ids"] = decoder_input_ids
     return model_inputs
 
 
@@ -134,18 +103,14 @@ def preprocess_data(raw_datasets: DatasetDict, tokenizer) -> DatasetDict:
     Returns:
         Tokenized datasets.
     """
-    # 获取原始列名，全部删除以避免冲突
-    original_columns = raw_datasets["train"].column_names
-    
     tokenized_datasets: DatasetDict = raw_datasets.map(
         function=lambda examples: preprocess_function(
             examples=examples,
-            prefix="",
             tokenizer=tokenizer,
             max_input_length=MAX_INPUT_LENGTH,
             max_target_length=MAX_TARGET_LENGTH,
         ),
         batched=True,
-        remove_columns=original_columns,  # 删除所有原始列，只保留新创建的列
+        remove_columns=raw_datasets["train"].column_names,
     )
     return tokenized_datasets

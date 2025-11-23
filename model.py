@@ -1,42 +1,37 @@
-from transformers import AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast, PreTrainedModel, AutoModelForSeq2SeqLM
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
 
-from constants import MODEL_CHECKPOINT, SOURCE_LANG, TARGET_LANG
+from constants import MODEL_CHECKPOINT
 
 
-def initialize_tokenizer() -> PreTrainedTokenizer | PreTrainedTokenizerFast:
+def initialize_tokenizer() -> PreTrainedTokenizer:
     """
-    Initialize a tokenizer for sequence-to-sequence tasks.
+    Initialize a tokenizer for MarianMT model (opus-mt-zh-en).
 
     Returns:
         A tokenizer for sequence-to-sequence tasks.
 
-    NOTE: You are free to change this. But make sure the tokenizer is the same as the model.
+    NOTE: You are free to change this.
     """
-    tokenizer: PreTrainedTokenizer | PreTrainedTokenizerFast = AutoTokenizer.from_pretrained(
-        pretrained_model_name_or_path=MODEL_CHECKPOINT,
-        src_lang=SOURCE_LANG,
-        tgt_lang=TARGET_LANG
+    tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(
+        pretrained_model_name_or_path=MODEL_CHECKPOINT
     )
     return tokenizer
 
 
 def initialize_model() -> PreTrainedModel:
     """
-    Initialize a model for sequence-to-sequence tasks. You are free to change this,
-    not only seq2seq models, but also other models like BERT, or even LLMs.
+    Initialize MarianMT model for Chinese to English translation.
 
     Returns:
         A model for sequence-to-sequence tasks.
 
     NOTE: You are free to change this.
     """
-    # 正常加载模型，让Trainer处理GPU分配
-    # 注意：确保缓存中只有model.safetensors，没有pytorch_model.bin
     model: PreTrainedModel = AutoModelForSeq2SeqLM.from_pretrained(
         pretrained_model_name_or_path=MODEL_CHECKPOINT
     )
     
-    # Enable gradient checkpointing for memory efficiency
+    # Enable gradient checkpointing for memory efficiency on RTX 4080S
     if hasattr(model, "gradient_checkpointing_enable"):
         model.gradient_checkpointing_enable()
     
