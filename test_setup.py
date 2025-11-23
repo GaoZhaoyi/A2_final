@@ -54,9 +54,11 @@ def test_setup():
     # 6. 测试数据预处理
     print("\n6. 测试数据预处理...")
     # 使用小子集测试
+    from datasets import DatasetDict
     test_subset = raw_datasets["train"].select(range(100))
+    raw_subset = DatasetDict({"train": test_subset, "validation": test_subset, "test": test_subset})
     tokenized_subset = preprocess_data(
-        {"train": test_subset, "validation": test_subset, "test": test_subset},
+        raw_subset,
         tokenizer
     )
     print(f"✓ 数据预处理正常工作")
