@@ -30,21 +30,11 @@ def initialize_model() -> PreTrainedModel:
 
     NOTE: You are free to change this.
     """
-    import torch
-    
-    # 直接使用device_map加载到GPU，避免meta device问题
+    # 正常加载模型，让Trainer处理GPU分配
     # 注意：确保缓存中只有model.safetensors，没有pytorch_model.bin
-    if torch.cuda.is_available():
-        model: PreTrainedModel = AutoModelForSeq2SeqLM.from_pretrained(
-            pretrained_model_name_or_path=MODEL_CHECKPOINT,
-            device_map="auto",  # 自动分配到可用GPU
-            torch_dtype=torch.float32  # 明确指定数据类型
-        )
-    else:
-        model: PreTrainedModel = AutoModelForSeq2SeqLM.from_pretrained(
-            pretrained_model_name_or_path=MODEL_CHECKPOINT,
-            low_cpu_mem_usage=False
-        )
+    model: PreTrainedModel = AutoModelForSeq2SeqLM.from_pretrained(
+        pretrained_model_name_or_path=MODEL_CHECKPOINT
+    )
     
     # Enable gradient checkpointing for memory efficiency
     if hasattr(model, "gradient_checkpointing_enable"):
