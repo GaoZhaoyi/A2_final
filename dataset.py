@@ -18,21 +18,23 @@ def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDat
     # Load WMT19 zh-en dataset
     wmt19 = load_dataset("wmt19", "zh-en")
     
-    # 使用50万训练样本，配合更强正则和更多epoch，减少过拟合
-    total_train_size = 500000
+    # 基于最佳实践：预训练模型只需少量数据fine-tune
+    # 参考：T5论文、Hugging Face文档
+    total_train_size = 100000  # 10万样本足够
     validation_size = 2000
     
-    # 前50万作为训练集
+    # 前10万作为训练集
     train_dataset = wmt19["train"].select(range(total_train_size))
     
-    # 紧接着的2000条作为验证集，保证与训练集不重叠且分布接近
+    # 紧接着的2000条作为验证集
     validation_dataset = wmt19["train"].select(
         range(total_train_size, total_train_size + validation_size)
     )
     
     print(f"训练样本数: {len(train_dataset):,}")
     print(f"验证样本数: {len(validation_dataset):,}")
-    print(f"预计训练时间: 约2-3小时 (RTX 4080S, 5 epochs, 正则增强)")
+    print(f"预计训练时间: 约30-40分钟 (RTX 4080S, 1 epoch)")
+    print(f"策略: 极小学习率fine-tuning，避免catastrophic forgetting")
 
     # 测试集保持不变
     test_dataset = wmt19["validation"]

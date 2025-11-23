@@ -7,7 +7,8 @@ from evaluation import compute_metrics
 def create_training_arguments() -> TrainingArguments:
     """
     Create training arguments for RTX 4080S (16GB VRAM).
-    针对opus-mt-zh-en模型，在50万样本上使用更强正则和更多epoch。
+    基于文献最佳实践：预训练模型fine-tuning策略。
+    参考：T5论文、Hugging Face Fine-tuning Guide、OPUS-MT文档
 
     Returns:
         TrainingArguments instance。
@@ -17,33 +18,32 @@ def create_training_arguments() -> TrainingArguments:
     training_args = Seq2SeqTrainingArguments(
         output_dir=OUTPUT_DIR,
         eval_strategy="steps",
-        learning_rate=3e-5,  # 降低学习率，减少过拟合
-        per_device_train_batch_size=16,  # 减小batch size增加泛化能力
+        learning_rate=1e-5,  # 极小学习率，避免catastrophic forgetting
+        per_device_train_batch_size=32,  # 标准batch size
         per_device_eval_batch_size=32,
-        gradient_accumulation_steps=4,  # 保持有效batch=64
-        weight_decay=0.05,  # 增加权重衰减，防止过拟合
-        save_total_limit=3,  # 只保留最近3个checkpoint
-        num_train_epochs=5,  # 使用更多epoch配合更少样本
+        gradient_accumulation_steps=2,  # 有效batch=64
+        weight_decay=0.01,  # 适度正则
+        save_total_limit=2,  # 保留最佳2个checkpoint
+        num_train_epochs=1,  # 只需要1个epoch！
         predict_with_generate=True,
         fp16=False,
         bf16=True,  # RTX 4080S支持BF16
-        logging_steps=50,
-        save_steps=500,  # 更频繁保存checkpoint
-        eval_steps=500,  # 更频繁评估
+        logging_steps=100,
+        save_steps=1000,
+        eval_steps=1000,
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
         greater_is_better=False,
-        warmup_ratio=0.1,  # 使用warmup_ratio代替固定步数
-        lr_scheduler_type="cosine",  # 使用cosine调度器
+        warmup_ratio=0.05,  # 较少的warmup
+        lr_scheduler_type="linear",  # linear调度器更稳定
         seed=42,
         report_to="none",
-        label_smoothing_factor=0.2,  # 增加label smoothing 提升泛化
+        label_smoothing_factor=0.1,  # 适度label smoothing
         generation_max_length=128,
         generation_num_beams=4,
         
-        # 防止过拟合的配置
-        max_grad_norm=1.0,  # 梯度裁剪
-        gradient_checkpointing=True,  # 节省显存
+        # 基本配置
+        max_grad_norm=1.0,
         
         # 系统优化
         dataloader_num_workers=4,
