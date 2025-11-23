@@ -134,6 +134,9 @@ def preprocess_data(raw_datasets: DatasetDict, tokenizer) -> DatasetDict:
     Returns:
         Tokenized datasets.
     """
+    # 获取原始列名，全部删除以避免冲突
+    original_columns = raw_datasets["train"].column_names
+    
     tokenized_datasets: DatasetDict = raw_datasets.map(
         function=lambda examples: preprocess_function(
             examples=examples,
@@ -143,6 +146,6 @@ def preprocess_data(raw_datasets: DatasetDict, tokenizer) -> DatasetDict:
             max_target_length=MAX_TARGET_LENGTH,
         ),
         batched=True,
-        remove_columns=["translation"],  # 只移除translation列，保留所有新创建的列
+        remove_columns=original_columns,  # 删除所有原始列，只保留新创建的列
     )
     return tokenized_datasets
