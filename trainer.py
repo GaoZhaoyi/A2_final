@@ -6,10 +6,9 @@ from evaluation import compute_metrics
 
 def create_training_arguments() -> TrainingArguments:
     """
-    Create training arguments for mBART ultra-conservative fine-tuning.
-    极限保守策略：学习率5e-8，已验证test_bleu = 21.59
-    目标：保持接近零样本21.64的性能
-
+    Create training arguments for mT5 fine-tuning.
+    mT5-base策略：使用标准学习率5e-5，T5架构通常比mBART更稳定。
+    
     Returns:
         TrainingArguments instance。
 
@@ -18,24 +17,24 @@ def create_training_arguments() -> TrainingArguments:
     training_args = Seq2SeqTrainingArguments(
         output_dir=OUTPUT_DIR,
         eval_strategy="steps",
-        learning_rate=5e-8,  # 极限小学习率，最后尝试
-        per_device_train_batch_size=8,   # 较小batch，mBART较大
+        learning_rate=5e-5,  # mT5标准学习率
+        per_device_train_batch_size=8,
         per_device_eval_batch_size=16,
-        gradient_accumulation_steps=8,   # 有效batch=64
-        weight_decay=0.02,  # 增强正则化
-        save_strategy="no",  # 禁用checkpoint保存，节省磁盘空间
-        num_train_epochs=1,  # 只1轮，避免过度训练
+        gradient_accumulation_steps=8,
+        weight_decay=0.01,
+        save_strategy="no",
+        num_train_epochs=1,
         predict_with_generate=True,
         fp16=False,
-        bf16=True,  # RTX 4080S支持BF16
+        bf16=True,
         logging_steps=100,
-        eval_steps=125,  # 1万样本约156步，评估一次
-        load_best_model_at_end=False,  # 不保存checkpoint时无法加载最佳模型
-        warmup_ratio=0.2,   # 更多的warmup，保护预训练模型
-        lr_scheduler_type="linear",  # linear调度器更稳定
+        eval_steps=125,
+        load_best_model_at_end=False,
+        warmup_ratio=0.1,
+        lr_scheduler_type="linear",
         seed=42,
         report_to="none",
-        label_smoothing_factor=0.1,  # 适度label smoothing
+        label_smoothing_factor=0.1,
         generation_max_length=128,
         generation_num_beams=4,
         
@@ -52,8 +51,8 @@ def create_training_arguments() -> TrainingArguments:
 
 def create_data_collator(tokenizer, model):
     """
-    Create data collator for mBART model.
-    使用标准DataCollatorForSeq2Seq，会自动处理decoder_input_ids。
+    Create data collator for mT5 model.
+    使用标准DataCollatorForSeq2Seq。
     
     Args:
         tokenizer: Tokenizer object.
