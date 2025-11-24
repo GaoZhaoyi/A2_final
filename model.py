@@ -35,7 +35,17 @@ def initialize_model() -> PreTrainedModel:
         pretrained_model_name_or_path=MODEL_CHECKPOINT
     )
     
-    # M2M-100会自动处理目标语言token，不需要手动设置forced_bos_token_id
+    # M2M-100需要设置decoder_start_token_id为eos_token_id（根据官方文档）
+    # 并设置forced_bos_token_id为目标语言ID
+    from transformers import AutoTokenizer
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_CHECKPOINT)
+    
+    # M2M-100使用eos_token_id作为decoder的起始token
+    model.config.decoder_start_token_id = tokenizer.eos_token_id
+    
+    # 设置目标语言token（英语）
+    tokenizer.tgt_lang = TGT_LANG
+    model.config.forced_bos_token_id = tokenizer.get_lang_id(TGT_LANG)
     
     # Enable gradient checkpointing for memory efficiency
     if hasattr(model, "gradient_checkpointing_enable"):
