@@ -24,17 +24,14 @@ def create_training_arguments() -> TrainingArguments:
         per_device_eval_batch_size=16,
         gradient_accumulation_steps=8,   # 有效batch=64
         weight_decay=0.01,  # 适度正则
-        save_total_limit=2,  # 保留最佳2个checkpoint
+        save_strategy="no",  # 禁用checkpoint保存，节省磁盘空间
         num_train_epochs=1,  # 只1轮，避免过度训练
         predict_with_generate=True,
         fp16=False,
         bf16=True,  # RTX 4080S支持BF16
         logging_steps=100,
-        save_steps=500,   # 5万数据约625步，中间评估一次
         eval_steps=500,
-        load_best_model_at_end=True,
-        metric_for_best_model="eval_loss",
-        greater_is_better=False,
+        load_best_model_at_end=False,  # 不保存checkpoint时无法加载最佳模型
         warmup_ratio=0.1,   # 较多的warmup保护预训练模型
         lr_scheduler_type="linear",  # linear调度器更稳定
         seed=42,
