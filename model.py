@@ -35,6 +35,12 @@ def initialize_model() -> PreTrainedModel:
         pretrained_model_name_or_path=MODEL_CHECKPOINT
     )
     
+    # 设置NLLB的目标语言token（用于生成时的decoder起始）
+    # 需要先初始化tokenizer来获取目标语言的token id
+    from transformers import AutoTokenizer
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_CHECKPOINT, src_lang=SRC_LANG, tgt_lang=TGT_LANG)
+    model.config.forced_bos_token_id = tokenizer.convert_tokens_to_ids(TGT_LANG)
+    
     # Enable gradient checkpointing for memory efficiency on RTX 4080S
     if hasattr(model, "gradient_checkpointing_enable"):
         model.gradient_checkpointing_enable()

@@ -64,7 +64,7 @@ def create_data_collator(tokenizer, model):
 def preprocess_function(examples, tokenizer, max_input_length, max_target_length):
     """
     Preprocess the data for NLLB model.
-    标准的seq2seq预处理，DataCollatorForSeq2Seq会自动处理decoder_input_ids。
+    NLLB需要显式创建decoder_input_ids（右移labels，添加forced_bos_token）。
 
     Args:
         examples: Examples.
@@ -96,6 +96,17 @@ def preprocess_function(examples, tokenizer, max_input_length, max_target_length
     )
 
     model_inputs["labels"] = labels["input_ids"]
+    
+    # 为NLLB手动创建decoder_input_ids
+    # decoder_input_ids = 右移labels，开头添加forced_bos_token_id（目标语言token）
+    decoder_input_ids = []
+    for label_ids in labels["input_ids"]:
+        # NLLB使用tokenizer.convert_tokens_to_ids(tgt_lang)作为decoder起始token
+        # 右移：去掉最后一个token，在开头添加forced_bos_token
+        shifted = [tokenizer.convert_tokens_to_ids(tokenizer.tgt_lang)] + label_ids[:-1]
+        decoder_input_ids.append(shifted)
+    
+    model_inputs["decoder_input_ids"] = decoder_input_ids
     return model_inputs
 
 
