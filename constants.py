@@ -2,9 +2,9 @@
 Constants for the project.
 """
 
-# mBART: 已验证成功，test_bleu = 21.59
-# 611M参数，50种语言
-MODEL_CHECKPOINT: str = "facebook/mbart-large-50-many-to-many-mmt"
+# mBART-one-to-many: 尝试从多语言到英语的优化版本
+# 理论上在目标语言生成上可能更专注
+MODEL_CHECKPOINT: str = "facebook/mbart-large-50-one-to-many-mmt"
 
 # mBART语言代码
 SRC_LANG: str = "zh_CN"  # 中文

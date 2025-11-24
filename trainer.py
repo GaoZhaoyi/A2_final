@@ -6,10 +6,9 @@ from evaluation import compute_metrics
 
 def create_training_arguments() -> TrainingArguments:
     """
-    Create training arguments for mBART ultra-conservative fine-tuning.
-    极限保守策略：学习率5e-8，已验证test_bleu = 21.59
-    目标：保持接近零样本21.64的性能
-
+    Create training arguments for mBART one-to-many fine-tuning.
+    策略：保持与many-to-many完全一致的保守策略（5e-8），以便公平对比。
+    
     Returns:
         TrainingArguments instance。
 
