@@ -101,11 +101,12 @@ def build_trainer(model, tokenizer, tokenized_datasets) -> Trainer:
         compute_metrics=lambda eval_preds: compute_metrics(eval_preds, tokenizer),
     )
     
-    # 添加自定义callback，在每次evaluation时计算test_bleu
+    # 添加自定义callback，在每次evaluation时计算test_bleu并保存到文件
     test_callback = TestBLEUCallback(
         trainer=trainer,
         test_dataset=tokenized_datasets["test"],
-        tokenizer=tokenizer
+        tokenizer=tokenizer,
+        output_dir=OUTPUT_DIR  # 保存BLEU历史到results目录
     )
     trainer.add_callback(test_callback)
     
