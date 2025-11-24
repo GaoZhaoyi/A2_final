@@ -2,13 +2,13 @@
 Constants for the project.
 """
 
-# NLLB-200: Meta最新多语言翻译模型 (2022)
-# 600M参数，支持200种语言，针对翻译任务优化
-MODEL_CHECKPOINT: str = "facebook/nllb-200-distilled-600M"
+# M2M-100: Facebook大规模多语言翻译模型
+# 1.2B参数，100种语言，比mBART更强
+MODEL_CHECKPOINT: str = "facebook/m2m100_1.2B"
 
-# NLLB语言代码
-SRC_LANG: str = "zho_Hans"  # 简体中文
-TGT_LANG: str = "eng_Latn"  # 英文
+# M2M-100语言代码
+SRC_LANG: str = "zh"  # 中文
+TGT_LANG: str = "en"  # 英文
 
 # 序列最大长度
 MAX_INPUT_LENGTH: int = 128
