@@ -19,8 +19,9 @@ def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDat
     wmt19 = load_dataset("wmt19", "zh-en")
     
     # 修复验证集问题：使用官方验证集，避免虚高的eval_bleu
-    # 方案A：增加到50万样本 + 更高学习率，目标BLEU 23+
-    total_train_size = 500000
+    # mBART策略：极保守fine-tuning，避免破坏预训练知识
+    # 零样本21.64，目标23+，只需轻微提升1.5分
+    total_train_size = 50000
     validation_size = 2000
     
     # 前50万作为训练集
@@ -36,8 +37,9 @@ def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDat
     print(f"验证样本数: {len(validation_dataset):,} (随机抽取自官方验证集)")
     print(f"测试样本数: {len(wmt19['validation']):,} (完整官方验证集)")
     print(f"注：训练时将同时输出eval_bleu和test_bleu供参考")
-    print(f"预计训练时间: 约2.5小时 (RTX 4080S, 5 epochs, 50万样本)")
-    print(f"策略: 更高学习率(3e-5) + 更多数据，目标BLEU 23+")
+    print(f"预计训练时间: 约40分钟 (RTX 4080S, 1 epoch, 5万样本)")
+    print(f"策略: mBART极保守fine-tuning (零样本21.64 → 目标23+)")
+    print(f"      极小学习率(5e-6) + 少量数据(5万) + 短训练(1轮)")
 
     # 测试集保持不变
     test_dataset = wmt19["validation"]
