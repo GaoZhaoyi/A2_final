@@ -19,12 +19,12 @@ def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDat
     wmt19 = load_dataset("wmt19", "zh-en")
     
     # 修复验证集问题：使用官方验证集，避免虚高的eval_bleu
-    # mBART策略：极保守fine-tuning，避免破坏预训练知识
-    # 零样本21.64，目标23+，只需轻微提升1.5分
-    total_train_size = 50000
+    # mBART超保守策略：极小学习率 + 极少数据，微调不破坏预训练
+    # 零样本21.64，目标保持或轻微提升到22+
+    total_train_size = 10000  # 只用1万样本，避免过度训练
     validation_size = 2000
     
-    # 前50万作为训练集
+    # 前1万作为训练集
     train_dataset = wmt19["train"].select(range(total_train_size))
     
     # 使用官方验证集随机抽取2000条，避免位置偏差
@@ -37,9 +37,10 @@ def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDat
     print(f"验证样本数: {len(validation_dataset):,} (随机抽取自官方验证集)")
     print(f"测试样本数: {len(wmt19['validation']):,} (完整官方验证集)")
     print(f"注：训练时将同时输出eval_bleu和test_bleu供参考")
-    print(f"预计训练时间: 约40分钟 (RTX 4080S, 1 epoch, 5万样本)")
-    print(f"策略: mBART极保守fine-tuning (零样本21.64 → 目标23+)")
-    print(f"      极小学习率(5e-6) + 少量数据(5万) + 短训练(1轮)")
+    print(f"预计训练时间: 约15分钟 (RTX 4080S, 1 epoch, 1万样本)")
+    print(f"策略: mBART超保守微调 (零样本21.64 → 保持或提升至22+)")
+    print(f"      超小学习率(5e-7) + 极少数据(1万) + 短训练(1轮)")
+    print(f"      目标: 轻微调整而不破坏预训练知识")
 
     # 测试集保持不变
     test_dataset = wmt19["validation"]

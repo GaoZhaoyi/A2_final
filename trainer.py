@@ -7,9 +7,9 @@ from callbacks import TestBLEUCallback
 
 def create_training_arguments() -> TrainingArguments:
     """
-    Create training arguments for mBART fine-tuning.
-    极保守策略：在mBART零样本21.64的基础上轻微提升到1.5+分
-    避免catastrophic forgetting，保持预训练模型的通用能力
+    Create training arguments for mBART ultra-conservative fine-tuning.
+    超保守策略：学习率再降10倍，几乎不改变参数
+    目标：保持零样本21.64或轻微提升22+
 
     Returns:
         TrainingArguments instance。
@@ -19,20 +19,20 @@ def create_training_arguments() -> TrainingArguments:
     training_args = Seq2SeqTrainingArguments(
         output_dir=OUTPUT_DIR,
         eval_strategy="steps",
-        learning_rate=5e-6,  # 极小学习率，避免破坏预训练知识
+        learning_rate=5e-7,  # 超小学习率，几乎不改变参数
         per_device_train_batch_size=8,   # 较小batch，mBART较大
         per_device_eval_batch_size=16,
         gradient_accumulation_steps=8,   # 有效batch=64
-        weight_decay=0.01,  # 适度正则
+        weight_decay=0.02,  # 增强正则化
         save_strategy="no",  # 禁用checkpoint保存，节省磁盘空间
         num_train_epochs=1,  # 只1轮，避免过度训练
         predict_with_generate=True,
         fp16=False,
         bf16=True,  # RTX 4080S支持BF16
         logging_steps=100,
-        eval_steps=500,
+        eval_steps=125,  # 1万样本约156步，评估一次
         load_best_model_at_end=False,  # 不保存checkpoint时无法加载最佳模型
-        warmup_ratio=0.1,   # 较多的warmup保护预训练模型
+        warmup_ratio=0.2,   # 更多的warmup，保护预训练模型
         lr_scheduler_type="linear",  # linear调度器更稳定
         seed=42,
         report_to="none",
