@@ -2,7 +2,6 @@ from transformers import Trainer, TrainingArguments, DataCollatorForSeq2Seq, Seq
 
 from constants import OUTPUT_DIR
 from evaluation import compute_metrics
-# from callbacks import TestBLEUCallback  # 暂不使用，训练很短不需要中间评估
 
 
 def create_training_arguments() -> TrainingArguments:
@@ -98,15 +97,5 @@ def build_trainer(model, tokenizer, tokenized_datasets) -> Trainer:
         data_collator=data_collator,
         compute_metrics=lambda eval_preds: compute_metrics(eval_preds, tokenizer),
     )
-    
-    # 注释掉TestBLEUCallback，避免训练中间重复测试test_bleu
-    # 训练很短（1万样本），只在最终测试时评估即可
-    # test_callback = TestBLEUCallback(
-    #     trainer=trainer,
-    #     test_dataset=tokenized_datasets["test"],
-    #     tokenizer=tokenizer,
-    #     output_dir=OUTPUT_DIR
-    # )
-    # trainer.add_callback(test_callback)
     
     return trainer
