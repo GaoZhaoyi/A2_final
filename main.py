@@ -1,3 +1,8 @@
+import os
+# 消除警告信息
+os.environ["TOKENIZERS_PARALLELISM"] = "false"  # 消除tokenizers并行警告
+os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"  # 消除CUDA确定性警告
+
 from pathlib import Path
 from dataset import build_dataset, preprocess_data
 from model import initialize_model, initialize_tokenizer
