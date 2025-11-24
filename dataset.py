@@ -36,7 +36,6 @@ def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDat
     print(f"训练样本数: {len(train_dataset):,}")
     print(f"验证样本数: {len(validation_dataset):,} (随机抽取自官方验证集)")
     print(f"测试样本数: {len(wmt19['validation']):,} (完整官方验证集)")
-    print(f"注：训练时将同时输出eval_bleu和test_bleu供参考")
     print(f"预计训练时间: 约15分钟 (RTX 4080S, 1 epoch, 1万样本)")
     print(f"策略: mBART超保守微调 (零样本21.64 → 保持或提升至22+)")
     print(f"      超小学习率(5e-7) + 极少数据(1万) + 短训练(1轮)")
