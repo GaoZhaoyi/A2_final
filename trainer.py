@@ -6,9 +6,9 @@ from evaluation import compute_metrics
 
 def create_training_arguments() -> TrainingArguments:
     """
-    Create training arguments for M2M-100 ultra-conservative fine-tuning.
-    极限保守策略：学习率5e-8，1.2B参数模型
-    目标：利用更大模型容量，突破23分BLEU
+    Create training arguments for mBART ultra-conservative fine-tuning.
+    极限保守策略：学习率5e-8，已验证test_bleu = 21.59
+    目标：保持接近零样本21.64的性能
 
     Returns:
         TrainingArguments instance。
@@ -52,7 +52,7 @@ def create_training_arguments() -> TrainingArguments:
 
 def create_data_collator(tokenizer, model):
     """
-    Create data collator for M2M-100 model.
+    Create data collator for mBART model.
     使用标准DataCollatorForSeq2Seq，会自动处理decoder_input_ids。
     
     Args:
