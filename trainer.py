@@ -8,8 +8,8 @@ from evaluation import compute_metrics
 def create_training_arguments() -> TrainingArguments:
     """
     Create training arguments for mBART ultra-conservative fine-tuning.
-    极度保守策略：学习率1e-7，尽可能保持预训练知识
-    目标：保持零样本21.64或轻微提升22+
+    极限保守策略：学习率5e-8，最后一次尝试接近零样本性能
+    目标：尽可能接近零样本21.64
 
     Returns:
         TrainingArguments instance。
@@ -19,7 +19,7 @@ def create_training_arguments() -> TrainingArguments:
     training_args = Seq2SeqTrainingArguments(
         output_dir=OUTPUT_DIR,
         eval_strategy="steps",
-        learning_rate=1e-7,  # 极度小的学习率，尽量不破坏预训练
+        learning_rate=5e-8,  # 极限小学习率，最后尝试
         per_device_train_batch_size=8,   # 较小batch，mBART较大
         per_device_eval_batch_size=16,
         gradient_accumulation_steps=8,   # 有效batch=64
