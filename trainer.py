@@ -6,9 +6,9 @@ from evaluation import compute_metrics
 
 def create_training_arguments() -> TrainingArguments:
     """
-    Create training arguments for mBART ultra-conservative fine-tuning.
-    极限保守策略：学习率5e-8，最后一次尝试接近零样本性能
-    目标：尽可能接近零样本21.64
+    Create training arguments for NLLB ultra-conservative fine-tuning.
+    极限保守策略：学习率5e-8，避免破坏NLLB预训练知识
+    目标：在NLLB零样本基础上保持或提升性能
 
     Returns:
         TrainingArguments instance。

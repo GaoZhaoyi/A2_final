@@ -1,12 +1,12 @@
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer, MBartTokenizer
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, PreTrainedModel, PreTrainedTokenizer
 
 from constants import MODEL_CHECKPOINT, SRC_LANG, TGT_LANG
 
 
 def initialize_tokenizer() -> PreTrainedTokenizer:
     """
-    Initialize tokenizer for mBART model.
-    mBART需要设置源语言和目标语言代码。
+    Initialize tokenizer for NLLB model.
+    NLLB-200需要设置源语言和目标语言代码。
 
     Returns:
         A tokenizer for sequence-to-sequence tasks.
@@ -15,7 +15,7 @@ def initialize_tokenizer() -> PreTrainedTokenizer:
     """
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(
         pretrained_model_name_or_path=MODEL_CHECKPOINT,
-        src_lang=SRC_LANG,  # 中文
+        src_lang=SRC_LANG,  # 简体中文
         tgt_lang=TGT_LANG,  # 英文
     )
     return tokenizer
@@ -23,8 +23,8 @@ def initialize_tokenizer() -> PreTrainedTokenizer:
 
 def initialize_model() -> PreTrainedModel:
     """
-    Initialize mBART model for Chinese to English translation.
-    mBART-large-50: 611M参数的多语言翻译模型
+    Initialize NLLB model for Chinese to English translation.
+    NLLB-200-distilled-600M: 600M参数，Meta 2022最新多语言翻译模型
 
     Returns:
         A model for sequence-to-sequence tasks.
