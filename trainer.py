@@ -52,58 +52,23 @@ def create_training_arguments() -> TrainingArguments:
 
 def create_data_collator(tokenizer, model):
     """
-    Create custom data collator for NLLB model.
-    NLLB需要保留手动创建的decoder_input_ids，不能让DataCollator自动生成。
+    Create data collator for NLLB model.
+    使用标准DataCollatorForSeq2Seq，会自动处理decoder_input_ids。
     
     Args:
         tokenizer: Tokenizer object.
         model: Model object.
 
     Returns:
-        Custom data collator function.
+        DataCollatorForSeq2Seq instance.
 
     NOTE: You are free to change this.
     """
-    import torch
-    
-    def custom_collator(features):
-        """自定义collator，保留decoder_input_ids"""
-        # 提取所有字段
-        input_ids = [f["input_ids"] for f in features]
-        labels = [f["labels"] for f in features]
-        decoder_input_ids = [f["decoder_input_ids"] for f in features]
-        
-        # Pad input_ids
-        max_input_len = max(len(ids) for ids in input_ids)
-        padded_input_ids = []
-        attention_mask = []
-        for ids in input_ids:
-            padding_len = max_input_len - len(ids)
-            padded_input_ids.append(ids + [tokenizer.pad_token_id] * padding_len)
-            attention_mask.append([1] * len(ids) + [0] * padding_len)
-        
-        # Pad decoder_input_ids
-        max_decoder_len = max(len(ids) for ids in decoder_input_ids)
-        padded_decoder_input_ids = []
-        for ids in decoder_input_ids:
-            padding_len = max_decoder_len - len(ids)
-            padded_decoder_input_ids.append(ids + [tokenizer.pad_token_id] * padding_len)
-        
-        # Pad labels (use -100 for padding)
-        max_label_len = max(len(ids) for ids in labels)
-        padded_labels = []
-        for ids in labels:
-            padding_len = max_label_len - len(ids)
-            padded_labels.append(ids + [-100] * padding_len)
-        
-        return {
-            "input_ids": torch.tensor(padded_input_ids, dtype=torch.long),
-            "attention_mask": torch.tensor(attention_mask, dtype=torch.long),
-            "decoder_input_ids": torch.tensor(padded_decoder_input_ids, dtype=torch.long),
-            "labels": torch.tensor(padded_labels, dtype=torch.long),
-        }
-    
-    return custom_collator
+    return DataCollatorForSeq2Seq(
+        tokenizer=tokenizer, 
+        model=model,
+        padding=True
+    )
 
 
 def build_trainer(model, tokenizer, tokenized_datasets) -> Trainer:
