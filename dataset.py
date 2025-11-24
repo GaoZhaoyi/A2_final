@@ -1,7 +1,7 @@
 from datasets import Dataset, DatasetDict, IterableDataset, IterableDatasetDict, load_dataset
 from transformers import DataCollatorForSeq2Seq
 
-from constants import MAX_INPUT_LENGTH, MAX_TARGET_LENGTH, PREFIX
+from constants import MAX_INPUT_LENGTH, MAX_TARGET_LENGTH
 
 
 def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDataset:
@@ -49,7 +49,7 @@ def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDat
 
 def create_data_collator(tokenizer, model):
     """
-    Create standard data collator for mT5 model.
+    Create standard data collator for MarianMT model.
     
     Args:
         tokenizer: Tokenizer object.
@@ -63,8 +63,8 @@ def create_data_collator(tokenizer, model):
 
 def preprocess_function(examples, tokenizer, max_input_length, max_target_length):
     """
-    Preprocess the data for mT5 model.
-    mT5需要添加前缀来指定任务。
+    Preprocess the data for mBART model.
+    使用标准seq2seq预处理，DataCollatorForSeq2Seq会自动处理decoder_input_ids。
 
     Args:
         examples: Examples.
@@ -75,8 +75,8 @@ def preprocess_function(examples, tokenizer, max_input_length, max_target_length
     Returns:
         Model inputs.
     """
-    # 提取中文输入和英文目标，并添加前缀
-    inputs = [PREFIX + ex["zh"] for ex in examples["translation"]]
+    # 提取中文输入和英文目标
+    inputs = [ex["zh"] for ex in examples["translation"]]
     targets = [ex["en"] for ex in examples["translation"]]
 
     # Tokenize inputs
