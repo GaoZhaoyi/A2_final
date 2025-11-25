@@ -75,9 +75,9 @@ def create_training_arguments() -> TrainingArguments:
         output_dir=OUTPUT_DIR,
         eval_strategy="steps",
         learning_rate=2e-5,  # NLLB标准学习率
-        per_device_train_batch_size=8,
-        per_device_eval_batch_size=16,
-        gradient_accumulation_steps=4,   # 有效batch=32
+        per_device_train_batch_size=4,   # 减小batch避免OOM
+        per_device_eval_batch_size=8,    # 减小eval batch
+        gradient_accumulation_steps=8,   # 有效batch=32
         weight_decay=0.01,
         save_strategy="no",  # 禁用checkpoint保存，节省磁盘空间
         num_train_epochs=3,  # 3轮微调
@@ -91,9 +91,9 @@ def create_training_arguments() -> TrainingArguments:
         lr_scheduler_type="linear",
         seed=42,
         report_to="none",
-        label_smoothing_factor=0.1,
+        label_smoothing_factor=0.0,  # 禁用label smoothing避免OOM
         generation_max_length=128,
-        generation_num_beams=4,
+        generation_num_beams=2,  # 减少beam数量节省内存
         
         # 基本配置
         max_grad_norm=1.0,
