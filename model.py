@@ -13,12 +13,12 @@ def initialize_tokenizer() -> PreTrainedTokenizer:
 
     NOTE: You are free to change this.
     """
+    # NLLB/M2M100 需要在初始化时传入语言参数
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(
         pretrained_model_name_or_path=MODEL_CHECKPOINT,
+        src_lang=SRC_LANG,  # zho_Hans
+        tgt_lang=TGT_LANG,  # eng_Latn
     )
-    # NLLB 需要设置 src_lang 和 tgt_lang 属性
-    tokenizer.src_lang = SRC_LANG  # zho_Hans
-    tokenizer.tgt_lang = TGT_LANG  # eng_Latn
     return tokenizer
 
 
