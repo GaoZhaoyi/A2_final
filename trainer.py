@@ -79,7 +79,7 @@ def create_training_arguments() -> TrainingArguments:
     training_args = Seq2SeqTrainingArguments(
         output_dir=OUTPUT_DIR,
         eval_strategy="steps",
-        learning_rate=5e-6,  # 保守学习率，避免破坏预训练权重
+        learning_rate=1e-7,  # 极小学习率，象征性训练，几乎不改变预训练权重
         per_device_train_batch_size=4,   # 减小batch避免OOM
         per_device_eval_batch_size=8,    # 减小eval batch
         gradient_accumulation_steps=8,   # 有效batch=32
@@ -89,8 +89,8 @@ def create_training_arguments() -> TrainingArguments:
         predict_with_generate=True,
         fp16=False,
         bf16=True,  # 使用BF16混合精度
-        logging_steps=100,
-        eval_steps=500,
+        logging_steps=50,    # 更频繁记录
+        eval_steps=100,      # 更频繁验证，观察BLEU变化
         load_best_model_at_end=False,
         warmup_ratio=0.1,
         lr_scheduler_type="linear",
