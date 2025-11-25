@@ -82,17 +82,24 @@ def preprocess_function(examples, tokenizer, max_input_length, max_target_length
     inputs = [ex["zh"] for ex in examples["translation"]]
     targets = [ex["en"] for ex in examples["translation"]]
 
-    # 使用 tokenizer 同时处理 source 和 target
-    # 这会正确设置 input_ids 和 labels
+    # Tokenize inputs
     model_inputs = tokenizer(
         inputs, 
-        text_target=targets,
         max_length=max_input_length, 
-        max_target_length=max_target_length,
         truncation=True,
         padding=False  # DataCollator会处理padding
     )
     
+    # Tokenize targets (使用 text_target 参数)
+    with tokenizer.as_target_tokenizer():
+        labels = tokenizer(
+            targets,
+            max_length=max_target_length, 
+            truncation=True,
+            padding=False
+        )
+    
+    model_inputs["labels"] = labels["input_ids"]
     return model_inputs
 
 
