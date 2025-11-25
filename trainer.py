@@ -66,7 +66,8 @@ def create_data_collator(tokenizer, model):
     return DataCollatorForSeq2Seq(
         tokenizer=tokenizer, 
         model=model,
-        padding=True
+        padding=True,
+        label_pad_token_id=tokenizer.pad_token_id,
     )
 
 

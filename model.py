@@ -36,8 +36,6 @@ def initialize_model() -> PreTrainedModel:
         pretrained_model_name_or_path=MODEL_CHECKPOINT
     )
     
-    # Enable gradient checkpointing for memory efficiency
-    if hasattr(model, "gradient_checkpointing_enable"):
-        model.gradient_checkpointing_enable()
+    # 注意：NLLB 不启用 gradient_checkpointing，可能导致 decoder_input_ids 问题
     
     return model
