@@ -24,8 +24,11 @@ def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDat
     total_train_size = 10000  # 只用1万样本，避免过度训练
     validation_size = 2000
     
-    # 前1万作为训练集
-    train_dataset = wmt19["train"].select(range(total_train_size))
+    # 随机采样1万条作为训练集，避免顺序选取的分布偏差
+    import random
+    random.seed(42)
+    train_indices = random.sample(range(len(wmt19["train"])), total_train_size)
+    train_dataset = wmt19["train"].select(train_indices)
     
     # 使用官方验证集随机抽取2000条，避免位置偏差
     import random
