@@ -83,7 +83,7 @@ def create_training_arguments() -> TrainingArguments:
     training_args = Seq2SeqTrainingArguments(
         output_dir=OUTPUT_DIR,
         eval_strategy="steps",
-        learning_rate=5e-6,  # 适中学习率，配合 BLEU 选择最佳模型
+        learning_rate=2e-6,  # 较低学习率，减少对预训练权重的破坏
         per_device_train_batch_size=4,   # 减小batch避免OOM
         per_device_eval_batch_size=8,    # 减小eval batch
         gradient_accumulation_steps=8,   # 有效batch=32
