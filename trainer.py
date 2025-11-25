@@ -22,12 +22,17 @@ class DataCollatorForNLLB:
     label_pad_token_id: int = -100
 
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
-        # 分离 labels（在 pad 之前移除）
+        # 分离 labels 和 decoder_input_ids（在 pad 之前移除）
         labels = None
         if "labels" in features[0]:
             labels = [feature.pop("labels") for feature in features]
         
-        # Pad inputs (不包含 labels)
+        # 移除可能存在的 decoder_input_ids（评估时可能有）
+        if "decoder_input_ids" in features[0]:
+            for feature in features:
+                feature.pop("decoder_input_ids", None)
+        
+        # Pad inputs (只包含 input_ids 和 attention_mask)
         batch = self.tokenizer.pad(
             features,
             padding=self.padding,
