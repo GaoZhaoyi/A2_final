@@ -1,8 +1,12 @@
 import torch
+import warnings
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Union
 from transformers import Trainer, TrainingArguments, DataCollatorForSeq2Seq, Seq2SeqTrainer, Seq2SeqTrainingArguments, PreTrainedTokenizerBase
 from transformers.utils import PaddingStrategy
+
+# 忽略 NllbTokenizerFast 的 pad 方法警告（对性能影响很小）
+warnings.filterwarnings("ignore", message=".*NllbTokenizerFast.*")
 
 from constants import OUTPUT_DIR, TGT_LANG
 from evaluation import compute_metrics
