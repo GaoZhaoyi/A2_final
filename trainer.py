@@ -80,7 +80,7 @@ def create_training_arguments() -> TrainingArguments:
         gradient_accumulation_steps=8,   # 有效batch=32
         weight_decay=0.01,
         save_strategy="no",  # 禁用checkpoint保存，节省磁盘空间
-        num_train_epochs=3,  # 3轮微调
+        num_train_epochs=1,  # 先训练1轮观察效果
         predict_with_generate=True,
         fp16=False,
         bf16=True,  # 使用BF16混合精度
