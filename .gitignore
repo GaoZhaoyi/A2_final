@@ -1,0 +1,17 @@
+# 不需要推送到远端的文件
+*.zip
+a2.md
+pyproject.toml
+scripts.txt
+uv.lock
+zero_shot_test.py
+utils.py
+README.md
+
+# 缓存和输出
+__pycache__/
+*.pyc
+results/
+*.pt
+*.bin
+.cache/
