@@ -1,40 +1,40 @@
 from transformers import Trainer, TrainingArguments, DataCollatorForSeq2Seq, Seq2SeqTrainer, Seq2SeqTrainingArguments
 
-from constants import OUTPUT_DIR
+from constants import OUTPUT_DIR, TGT_LANG
 from evaluation import compute_metrics
 
 
 def create_training_arguments() -> TrainingArguments:
     """
-    Create training arguments for mBART one-to-many fine-tuning.
-    策略：保持与many-to-many完全一致的保守策略（5e-8），以便公平对比。
+    Create training arguments for NLLB-200 fine-tuning.
+    NLLB零样本BLEU 25.04，轻度微调以保持或提升性能。
     
     Returns:
-        TrainingArguments instance。
+        TrainingArguments instance.
 
-    NOTE: You are free to change this。
+    NOTE: You are free to change this.
     """
     training_args = Seq2SeqTrainingArguments(
         output_dir=OUTPUT_DIR,
         eval_strategy="steps",
-        learning_rate=5e-8,  # 极限小学习率，最后尝试
-        per_device_train_batch_size=8,   # 较小batch，mBART较大
+        learning_rate=2e-5,  # NLLB标准学习率
+        per_device_train_batch_size=8,
         per_device_eval_batch_size=16,
-        gradient_accumulation_steps=8,   # 有效batch=64
-        weight_decay=0.02,  # 增强正则化
+        gradient_accumulation_steps=4,   # 有效batch=32
+        weight_decay=0.01,
         save_strategy="no",  # 禁用checkpoint保存，节省磁盘空间
-        num_train_epochs=1,  # 只1轮，避免过度训练
+        num_train_epochs=3,  # 3轮微调
         predict_with_generate=True,
         fp16=False,
-        bf16=True,  # RTX 4080S支持BF16
+        bf16=True,  # 使用BF16混合精度
         logging_steps=100,
-        eval_steps=125,  # 1万样本约156步，评估一次
-        load_best_model_at_end=False,  # 不保存checkpoint时无法加载最佳模型
-        warmup_ratio=0.2,   # 更多的warmup，保护预训练模型
-        lr_scheduler_type="linear",  # linear调度器更稳定
+        eval_steps=500,
+        load_best_model_at_end=False,
+        warmup_ratio=0.1,
+        lr_scheduler_type="linear",
         seed=42,
         report_to="none",
-        label_smoothing_factor=0.1,  # 适度label smoothing
+        label_smoothing_factor=0.1,
         generation_max_length=128,
         generation_num_beams=4,
         
@@ -51,7 +51,7 @@ def create_training_arguments() -> TrainingArguments:
 
 def create_data_collator(tokenizer, model):
     """
-    Create data collator for mBART model.
+    Create data collator for NLLB model.
     使用标准DataCollatorForSeq2Seq，会自动处理decoder_input_ids。
     
     Args:
@@ -73,7 +73,7 @@ def create_data_collator(tokenizer, model):
 def build_trainer(model, tokenizer, tokenized_datasets) -> Trainer:
     """
     Build and return the trainer object for training and evaluation.
-    包含TestBLEUCallback，在每次eval时同时计算test_bleu
+    设置NLLB的forced_bos_token_id以指定目标语言。
 
     Args:
         model: Model for sequence-to-sequence tasks.
@@ -85,6 +85,11 @@ def build_trainer(model, tokenizer, tokenized_datasets) -> Trainer:
 
     NOTE: You are free to change this. But make sure the trainer is the same as the model.
     """
+    # 设置NLLB的目标语言token
+    forced_bos_token_id = tokenizer.convert_tokens_to_ids(TGT_LANG)
+    model.config.forced_bos_token_id = forced_bos_token_id
+    print(f"NLLB forced_bos_token_id: {forced_bos_token_id} ({TGT_LANG})")
+    
     data_collator = create_data_collator(tokenizer, model)
     training_args: TrainingArguments = create_training_arguments()
 

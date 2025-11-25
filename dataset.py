@@ -63,7 +63,7 @@ def create_data_collator(tokenizer, model):
 
 def preprocess_function(examples, tokenizer, max_input_length, max_target_length):
     """
-    Preprocess the data for mBART model.
+    Preprocess the data for NLLB model.
     使用标准seq2seq预处理，DataCollatorForSeq2Seq会自动处理decoder_input_ids。
 
     Args:

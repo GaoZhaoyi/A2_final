@@ -2,13 +2,12 @@
 Constants for the project.
 """
 
-# mBART-one-to-many: 尝试从多语言到英语的优化版本
-# 理论上在目标语言生成上可能更专注
-MODEL_CHECKPOINT: str = "facebook/mbart-large-50-one-to-many-mmt"
+# NLLB-200: Meta的多语言翻译模型，零样本BLEU 25.04
+MODEL_CHECKPOINT: str = "facebook/nllb-200-distilled-600M"
 
-# mBART语言代码
-SRC_LANG: str = "zh_CN"  # 中文
-TGT_LANG: str = "en_XX"  # 英文
+# NLLB语言代码
+SRC_LANG: str = "zho_Hans"  # 简体中文
+TGT_LANG: str = "eng_Latn"  # 英文
 
 # 序列最大长度
 MAX_INPUT_LENGTH: int = 128
