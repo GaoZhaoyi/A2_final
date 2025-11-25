@@ -16,8 +16,9 @@ def initialize_tokenizer() -> PreTrainedTokenizer:
     tokenizer: PreTrainedTokenizer = AutoTokenizer.from_pretrained(
         pretrained_model_name_or_path=MODEL_CHECKPOINT,
     )
-    # NLLB 需要设置 src_lang 属性
+    # NLLB 需要设置 src_lang 和 tgt_lang 属性
     tokenizer.src_lang = SRC_LANG  # zho_Hans
+    tokenizer.tgt_lang = TGT_LANG  # eng_Latn
     return tokenizer
 
 
