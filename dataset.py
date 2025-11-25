@@ -22,7 +22,7 @@ def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDat
     # mBART超保守策略：极小学习率 + 极少数据，微调不破坏预训练
     # 零样本21.64，目标保持或轻微提升到22+
     total_train_size = 10000  # 只用1万样本，避免过度训练
-    validation_size = 2000
+    validation_size = 500     # 验证集只作为训练参考，不需要太大
     
     # 随机采样1万条作为训练集，避免顺序选取的分布偏差
     import random
@@ -30,7 +30,7 @@ def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDat
     train_indices = random.sample(range(len(wmt19["train"])), total_train_size)
     train_dataset = wmt19["train"].select(train_indices)
     
-    # 使用官方验证集随机抽取2000条，避免位置偏差
+    # 使用官方验证集随机抽取500条，避免位置偏差
     import random
     random.seed(42)  # 保证可复现
     val_indices = random.sample(range(len(wmt19["validation"])), validation_size)
