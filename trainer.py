@@ -83,10 +83,10 @@ def create_training_arguments() -> TrainingArguments:
     training_args = Seq2SeqTrainingArguments(
         output_dir=OUTPUT_DIR,
         eval_strategy="no",              # 不验证，节省时间
-        learning_rate=1e-8,              # 极小学习率，象征性微调，几乎不改变权重
-        per_device_train_batch_size=4,   # 减小batch避免OOM
-        per_device_eval_batch_size=8,    # 减小eval batch
-        gradient_accumulation_steps=8,   # 有效batch=32
+        learning_rate=5e-7,              # 比 1e-8 大但仍保守
+        per_device_train_batch_size=8,   # 增大batch
+        per_device_eval_batch_size=8,    # eval batch
+        gradient_accumulation_steps=16,  # 有效batch=128
         weight_decay=0.0,                # 不使用权重衰减
         save_strategy="no",              # 不保存checkpoint，避免磁盘问题
         num_train_epochs=1,              # 只训练1轮
