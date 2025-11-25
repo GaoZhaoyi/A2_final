@@ -5,7 +5,6 @@ pyproject.toml
 scripts.txt
 uv.lock
 zero_shot_test.py
-utils.py
 README.md
 
 # 缓存和输出
