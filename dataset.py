@@ -63,8 +63,8 @@ def create_data_collator(tokenizer, model):
 
 def preprocess_function(examples, tokenizer, max_input_length, max_target_length):
     """
-    Preprocess the data for NLLB model.
-    使用标准seq2seq预处理，DataCollatorForSeq2Seq会自动处理decoder_input_ids。
+    Preprocess the data for NLLB/M2M100 model.
+    直接使用 tokenizer 的 text_target 参数，确保正确生成所有必要字段。
 
     Args:
         examples: Examples.
@@ -79,23 +79,17 @@ def preprocess_function(examples, tokenizer, max_input_length, max_target_length
     inputs = [ex["zh"] for ex in examples["translation"]]
     targets = [ex["en"] for ex in examples["translation"]]
 
-    # Tokenize inputs
+    # 使用 tokenizer 同时处理 source 和 target
+    # 这会正确设置 input_ids 和 labels
     model_inputs = tokenizer(
         inputs, 
+        text_target=targets,
         max_length=max_input_length, 
+        max_target_length=max_target_length,
         truncation=True,
         padding=False  # DataCollator会处理padding
     )
     
-    # Tokenize targets
-    labels = tokenizer(
-        text_target=targets,
-        max_length=max_target_length, 
-        truncation=True,
-        padding=False
-    )
-
-    model_inputs["labels"] = labels["input_ids"]
     return model_inputs
 
 
