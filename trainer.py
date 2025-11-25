@@ -89,13 +89,13 @@ def create_training_arguments() -> TrainingArguments:
         gradient_accumulation_steps=8,   # 有效batch=32
         weight_decay=0.01,
         save_strategy="steps",           # 按步骤保存checkpoint
-        save_steps=100,                  # 每100步保存一次
+        save_steps=110,                  # 每110步保存一次
         num_train_epochs=2,              # 训练2轮，让模型有机会学习
         predict_with_generate=True,
         fp16=False,
         bf16=True,  # 使用BF16混合精度
         logging_steps=50,    # 更频繁记录
-        eval_steps=100,      # 每100步验证BLEU
+        eval_steps=110,      # 每110步验证BLEU，与save_steps一致
         load_best_model_at_end=True,     # 训练结束后加载最佳模型
         metric_for_best_model="bleu",    # 基于BLEU选择最佳模型
         greater_is_better=True,          # BLEU越高越好
