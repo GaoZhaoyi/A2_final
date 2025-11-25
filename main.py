@@ -36,15 +36,33 @@ def main():
         tokenized_datasets=tokenized_datasets,
     )
     
+    # 训练前先评估零样本 BLEU（作为基准）
+    print("\n" + "="*50)
+    print("Zero-shot evaluation (before training):")
+    print("="*50)
+    zero_shot_metrics = trainer.evaluate(
+        eval_dataset=tokenized_datasets["test"],
+        metric_key_prefix="zero_shot",
+    )
+    print(f"Zero-shot BLEU: {zero_shot_metrics['zero_shot_bleu']:.2f}")
+    print("="*50 + "\n")
+    
     # Train the model
     trainer.train()
 
     # Evaluate the model on the test dataset
+    print("\n" + "="*50)
+    print("Fine-tuned evaluation (after training):")
+    print("="*50)
     test_metrics = trainer.evaluate(
         eval_dataset=tokenized_datasets["test"],
         metric_key_prefix="test",
     )
-    print("Test Metrics:", test_metrics)
+    print(f"Fine-tuned BLEU: {test_metrics['test_bleu']:.2f}")
+    print("="*50)
+    
+    # 对比
+    print(f"\nBLEU Change: {zero_shot_metrics['zero_shot_bleu']:.2f} -> {test_metrics['test_bleu']:.2f} ({test_metrics['test_bleu'] - zero_shot_metrics['zero_shot_bleu']:+.2f})")
 
 
 if __name__ == "__main__":
