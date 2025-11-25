@@ -82,23 +82,19 @@ def create_training_arguments() -> TrainingArguments:
     """
     training_args = Seq2SeqTrainingArguments(
         output_dir=OUTPUT_DIR,
-        eval_strategy="steps",
-        learning_rate=2e-6,  # 较低学习率，减少对预训练权重的破坏
+        eval_strategy="no",              # 不验证，节省时间
+        learning_rate=1e-8,              # 极小学习率，象征性微调，几乎不改变权重
         per_device_train_batch_size=4,   # 减小batch避免OOM
         per_device_eval_batch_size=8,    # 减小eval batch
         gradient_accumulation_steps=8,   # 有效batch=32
-        weight_decay=0.01,
-        save_strategy="steps",           # 按步骤保存checkpoint
-        save_steps=110,                  # 每110步保存一次
-        num_train_epochs=2,              # 训练2轮，让模型有机会学习
+        weight_decay=0.0,                # 不使用权重衰减
+        save_strategy="no",              # 不保存checkpoint，避免磁盘问题
+        num_train_epochs=1,              # 只训练1轮
         predict_with_generate=True,
         fp16=False,
         bf16=True,  # 使用BF16混合精度
-        logging_steps=50,    # 更频繁记录
-        eval_steps=110,      # 每110步验证BLEU，与save_steps一致
-        load_best_model_at_end=True,     # 训练结束后加载最佳模型
-        metric_for_best_model="bleu",    # 基于BLEU选择最佳模型
-        greater_is_better=True,          # BLEU越高越好
+        logging_steps=50,    # 记录loss
+        load_best_model_at_end=False,    # 不需要加载最佳模型
         warmup_ratio=0.1,
         lr_scheduler_type="linear",
         seed=42,
