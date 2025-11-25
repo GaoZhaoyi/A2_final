@@ -1,7 +1,62 @@
-from transformers import Trainer, TrainingArguments, DataCollatorForSeq2Seq, Seq2SeqTrainer, Seq2SeqTrainingArguments
+import torch
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Union
+from transformers import Trainer, TrainingArguments, DataCollatorForSeq2Seq, Seq2SeqTrainer, Seq2SeqTrainingArguments, PreTrainedTokenizerBase
+from transformers.utils import PaddingStrategy
 
 from constants import OUTPUT_DIR, TGT_LANG
 from evaluation import compute_metrics
+
+
+@dataclass
+class DataCollatorForNLLB:
+    """
+    自定义 DataCollator，手动生成 decoder_input_ids。
+    解决 NLLB/M2M100 模型训练时 decoder_input_ids 缺失的问题。
+    """
+    tokenizer: PreTrainedTokenizerBase
+    model: Optional[Any] = None
+    padding: Union[bool, str, PaddingStrategy] = True
+    max_length: Optional[int] = None
+    pad_to_multiple_of: Optional[int] = None
+    label_pad_token_id: int = -100
+
+    def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
+        # 分离 labels
+        labels = [feature["labels"] for feature in features] if "labels" in features[0] else None
+        
+        # Pad inputs
+        batch = self.tokenizer.pad(
+            features,
+            padding=self.padding,
+            max_length=self.max_length,
+            pad_to_multiple_of=self.pad_to_multiple_of,
+            return_tensors="pt",
+        )
+        
+        # 处理 labels 和生成 decoder_input_ids
+        if labels is not None:
+            # Pad labels
+            max_label_length = max(len(l) for l in labels)
+            padded_labels = []
+            decoder_input_ids_list = []
+            
+            for label in labels:
+                # Pad label
+                padding_length = max_label_length - len(label)
+                padded_label = label + [self.label_pad_token_id] * padding_length
+                padded_labels.append(padded_label)
+                
+                # 生成 decoder_input_ids: 将 labels 右移一位
+                # decoder_input_ids = [eos_token_id] + labels[:-1]
+                decoder_input_id = [self.tokenizer.eos_token_id] + label[:-1]
+                decoder_input_id = decoder_input_id + [self.tokenizer.pad_token_id] * padding_length
+                decoder_input_ids_list.append(decoder_input_id)
+            
+            batch["labels"] = torch.tensor(padded_labels, dtype=torch.long)
+            batch["decoder_input_ids"] = torch.tensor(decoder_input_ids_list, dtype=torch.long)
+        
+        return batch
 
 
 def create_training_arguments() -> TrainingArguments:
@@ -52,22 +107,22 @@ def create_training_arguments() -> TrainingArguments:
 def create_data_collator(tokenizer, model):
     """
     Create data collator for NLLB model.
-    使用标准DataCollatorForSeq2Seq，会自动处理decoder_input_ids。
+    使用自定义 DataCollatorForNLLB 来正确生成 decoder_input_ids。
     
     Args:
         tokenizer: Tokenizer object.
         model: Model object.
 
     Returns:
-        DataCollatorForSeq2Seq instance.
+        DataCollatorForNLLB instance.
 
     NOTE: You are free to change this.
     """
-    return DataCollatorForSeq2Seq(
+    return DataCollatorForNLLB(
         tokenizer=tokenizer, 
         model=model,
         padding=True,
-        label_pad_token_id=tokenizer.pad_token_id,
+        label_pad_token_id=-100,
     )
 
 
