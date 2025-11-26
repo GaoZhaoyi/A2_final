@@ -82,32 +82,37 @@ def create_training_arguments() -> TrainingArguments:
     """
     training_args = Seq2SeqTrainingArguments(
         output_dir=OUTPUT_DIR,
-        eval_strategy="no",              # 不验证，节省时间
-        learning_rate=5e-7,              # 保守学习率
-        per_device_train_batch_size=4,   # 减小避免OOM
-        per_device_eval_batch_size=8,    # eval batch
-        gradient_accumulation_steps=8,   # 有效batch=32
-        weight_decay=0.0,                # 不使用权重衰减
-        save_strategy="no",              # 不保存checkpoint，避免磁盘问题
-        num_train_epochs=3,              # 尝试3轮，小batch+小lr需要更多轮
-        predict_with_generate=True,
+        eval_strategy="steps",           # 定期验证
+        eval_steps=200,                  # 每200步验证
+        learning_rate=2e-5,              # 2e-5 是微调的最佳起始点
+        per_device_train_batch_size=4,   # 保持显存安全
+        per_device_eval_batch_size=8,    
+        gradient_accumulation_steps=8,   # 有效 Batch = 32
+        weight_decay=0.01,               # 防止过拟合
+        save_strategy="steps",           
+        save_steps=200,                  # 配合 eval 保存
+        save_total_limit=2,              # 只保留最好的2个模型
+        num_train_epochs=3,              # 3轮足够收敛
+        predict_with_generate=True,      # 评估时生成翻译结果
         fp16=False,
-        bf16=True,  # 使用BF16混合精度
-        logging_steps=50,    # 记录loss
-        load_best_model_at_end=False,    # 不需要加载最佳模型
+        bf16=True,                       # 40系显卡推荐 BF16
+        logging_steps=50,                
+        load_best_model_at_end=True,     # 训练结束后加载最佳模型
+        metric_for_best_model="bleu",    # 以 BLEU 为准
+        greater_is_better=True,
         warmup_ratio=0.1,
         lr_scheduler_type="linear",
         seed=42,
         report_to="none",
-        label_smoothing_factor=0.0,  # 禁用label smoothing避免OOM
+        label_smoothing_factor=0.1,      # 0.1 是翻译任务的标准值
         generation_max_length=128,
-        generation_num_beams=2,  # 减少beam数量节省内存
+        generation_num_beams=2,          # Beam Search 宽度
         
         # 基本配置
         max_grad_norm=1.0,
         
         # 系统优化
-        dataloader_num_workers=4,
+        dataloader_num_workers=0,        # Windows 必须为 0
         dataloader_pin_memory=True,
     )
 

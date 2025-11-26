@@ -18,30 +18,32 @@ def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDat
     # Load WMT19 zh-en dataset
     wmt19 = load_dataset("wmt19", "zh-en")
     
-    # 修复验证集问题：使用官方验证集，避免虚高的eval_bleu
-    # mBART超保守策略：极小学习率 + 极少数据，微调不破坏预训练
-    # 零样本21.64，目标保持或轻微提升到22+
-    total_train_size = 10000  # 回到1万样本，避免过度微调
-    validation_size = 500     # 验证集只作为训练参考，不需要太大
+    # 策略调整：增加数据量，严格划分验证集
+    # 目标：从 21.66 提升到 23+
+    # 方法：使用更多数据 (50k)，并从训练集中划分验证集，防止测试集泄露
     
-    # 随机采样1万条作为训练集，避免顺序选取的分布偏差
+    total_samples = 51000  # 50k 训练 + 1k 验证
+    
     import random
     random.seed(42)
-    train_indices = random.sample(range(len(wmt19["train"])), total_train_size)
-    train_dataset = wmt19["train"].select(train_indices)
     
-    # 使用官方验证集随机抽取500条，避免位置偏差
-    import random
-    random.seed(42)  # 保证可复现
-    val_indices = random.sample(range(len(wmt19["validation"])), validation_size)
-    validation_dataset = wmt19["validation"].select(val_indices)
+    # 从庞大的训练集中采样
+    full_train_indices = random.sample(range(len(wmt19["train"])), total_samples)
+    subset_dataset = wmt19["train"].select(full_train_indices)
+    
+    # 拆分训练集和验证集 (98% 训练, 2% 验证)
+    # split_dataset 包含 'train' 和 'test' 两个key，这里 'test' 其实是我们用的验证集
+    split_dataset = subset_dataset.train_test_split(test_size=1000, seed=42)
+    
+    train_dataset = split_dataset["train"]
+    validation_dataset = split_dataset["test"]
+    
+    # 官方验证集仅用于最终测试
+    test_dataset = wmt19["validation"]
     
     print(f"训练样本数: {len(train_dataset):,}")
-    print(f"验证样本数: {len(validation_dataset):,}")
-    print(f"测试样本数: {len(wmt19['validation']):,} (完整官方验证集)")
-
-    # 测试集保持不变
-    test_dataset = wmt19["validation"]
+    print(f"验证样本数: {len(validation_dataset):,} (从训练集拆分)")
+    print(f"测试样本数: {len(test_dataset):,} (完整官方验证集)")
     
     return DatasetDict({
         "train": train_dataset,
