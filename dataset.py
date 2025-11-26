@@ -21,7 +21,7 @@ def build_dataset() -> DatasetDict | Dataset | IterableDatasetDict | IterableDat
     # 修复验证集问题：使用官方验证集，避免虚高的eval_bleu
     # mBART超保守策略：极小学习率 + 极少数据，微调不破坏预训练
     # 零样本21.64，目标保持或轻微提升到22+
-    total_train_size = 50000  # 增加到5万样本
+    total_train_size = 10000  # 回到1万样本，避免过度微调
     validation_size = 500     # 验证集只作为训练参考，不需要太大
     
     # 随机采样1万条作为训练集，避免顺序选取的分布偏差
